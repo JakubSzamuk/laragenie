@@ -2,7 +2,10 @@
 
 namespace JoshEmbling\Laragenie\Helpers;
 
+use Laravel\Prompts\Output\ConsoleOutput;
 use OpenAI\Responses\Chat\CreateResponse;
+use OpenAI\Responses\Chat\CreateStreamedResponse;
+use OpenAI\Responses\StreamResponse;
 
 use function Laravel\Prompts\spin;
 
@@ -35,32 +38,56 @@ trait Chatbot
         ];
     }
 
-    public function botResponse(string $chunks, string $question): CreateResponse
+    public function botResponse(string $chunks, string $question): CreateStreamedResponse
     {
         $this->textNote('Generating answer...');
 
         try {
-            $response = spin(
-                fn () => $this->openai->chat()->create([
-                    'model' => config('laragenie.openai.chat.model'),
-                    'temperature' => config('laragenie.openai.chat.temperature'),
-                    'messages' => [
-                        [
-                            'role' => 'system',
-                            'content' => config('laragenie.bot.instructions').$chunks,
-                        ],
-                        [
-                            'role' => 'user',
-                            'content' => $question,
-                        ],
+            $response_stream = $this->openai->chat()->createStreamed([
+                'model' => config('laragenie.openai.chat.model'),
+                'temperature' => config('laragenie.openai.chat.temperature'),
+                'messages' => [
+                    [
+                        'role' => 'system',
+                        'content' => config('laragenie.bot.instructions').$chunks,
                     ],
-                ])
-            );
+                    [
+                        'role' => 'user',
+                        'content' => $question,
+                    ],
+                ],
+            ]);
         } catch (\Throwable $th) {
             $this->textError($th->getMessage());
             $this->exitCommand();
         }
 
-        return $response;
+        $console_output = new ConsoleOutput();
+
+        // Change the output text colour
+        $console_output->write('<info>');
+
+        $current_line = '';
+        foreach ($response_stream as $response) {
+            $response_new_data = $response->choices[0]->toArray();
+            $new_token = $response_new_data['delta']['content'] ?? null;
+
+            if (!$new_token) {
+                continue;
+            }
+
+            // Wrap the text if the current line will be over 70 chars
+            if (strlen($current_line . $new_token) > 70) {
+                $current_line = ltrim($new_token);
+
+                $console_output->write("\n" . $current_line);
+            } else {
+                $console_output->write($new_token);
+                $current_line .= $new_token;
+            }
+        }
+        $console_output->writeln("</info>\n\n");
+
+
     }
 }

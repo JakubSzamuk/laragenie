@@ -40,24 +40,25 @@ trait Questions
 
             $botResponse = $this->botResponse($chunks, $question);
 
-            if ($botResponse) {
-                $answer = $botResponse->choices[0]->message->content;
-                $tokens = $botResponse->usage->totalTokens;
-                $calculatedCost = $this->calculateCost($tokens);
+            // if ($botResponse) {
+            //     $answer = $botResponse->choices[0]->message->content;
 
-                if (config('laragenie.database.save')) {
-                    $laragenie->fill([
-                        'answer' => $answer,
-                        'cost' => $calculatedCost,
-                        'vectors' => $results['vectors'],
-                    ]);
+            //     $tokens = $botResponse->usage->totalTokens;
+            //     $calculatedCost = $this->calculateCost($tokens);
 
-                    $laragenie->save();
-                }
+            //     if (config('laragenie.database.save')) {
+            //         $laragenie->fill([
+            //             'answer' => $answer,
+            //             'cost' => $calculatedCost,
+            //             'vectors' => $results['vectors'],
+            //         ]);
 
-                $this->textOutput($answer);
-                $this->costResponse($calculatedCost);
-            }
+            //         $laragenie->save();
+            //     }
+
+            //     // $this->textOutput($answer);
+            //     $this->costResponse($calculatedCost);
+            // }
         }
 
         $this->userAction();

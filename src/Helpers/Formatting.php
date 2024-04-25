@@ -2,6 +2,8 @@
 
 namespace JoshEmbling\Laragenie\Helpers;
 
+use Laravel\Prompts\Output\ConsoleOutput;
+
 use function Laravel\Prompts\error;
 use function Laravel\Prompts\info;
 use function Laravel\Prompts\note;
